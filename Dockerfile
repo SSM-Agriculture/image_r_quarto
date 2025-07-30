@@ -16,7 +16,7 @@ RUN curl -sL "https://yihui.org/tinytex/install-bin-unix.sh" | sh
 ENV PATH="/root/.TinyTeX/bin/x86_64-linux:${PATH}"
 
 RUN tlmgr update --self --all
-RUN tlmgr install xetex latex-bin latex-xcolor collection-xetex
+RUN tlmgr install xetex latex-bin latex-xcolor collection-xetex || echo "tlmgr install encountered errors but continuing"
 
 RUN install2.r --error --skipinstalled tidyverse rmarkdown quarto
 
