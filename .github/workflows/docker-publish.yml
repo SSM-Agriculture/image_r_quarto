@@ -1,33 +1,35 @@
-# Base image R avec système Debian stable
-FROM rocker/r-ver:4.5.1
+name: Build and Push Docker image to Docker Hub
 
-# Installer dépendances système utiles (y compris pour quarto et LaTeX PDF si besoin)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    curl \
-    gdebi-core \
-    pandoc \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
-    libgit2-dev \
-    zlib1g-dev \
-    fonts-dejavu \
-    && rm -rf /var/lib/apt/lists/*
+on:
+  push:
+    branches: [main]
 
-# Installer Quarto CLI (via .deb)
-ENV QUARTO_VERSION=1.4.550
-RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb && \
-    gdebi --non-interactive quarto-${QUARTO_VERSION}-linux-amd64.deb && \
-    rm quarto-${QUARTO_VERSION}-linux-amd64.deb
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
 
-# Installer quelques packages R utiles
-RUN install2.r --error --skipinstalled \
-    tidyverse \
-    quarto \
-    rmarkdown
+    steps:
+      # Clone ton dépôt
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-# Vérification
-RUN Rscript -e 'sessionInfo()' && quarto --version
+      # Connexion à Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-CMD ["R"]
+      # Builder et tagger l’image
+      - name: Build and tag Docker image
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/r-quarto
+          docker build -t $IMAGE_NAME:1.4.550 .
+          docker tag $IMAGE_NAME:1.4.550 $IMAGE_NAME:latest
+
+      # Pousser vers Docker Hub
+      - name: Push image to Docker Hub
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/r-quarto
+          docker push $IMAGE_NAME:1.4.550
+          docker push $IMAGE_NAME:latest
