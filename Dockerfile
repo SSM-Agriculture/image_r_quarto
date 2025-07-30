@@ -1,8 +1,18 @@
+# Base image R avec système Debian stable
 FROM rocker/r-ver:4.5.1
 
-# Installer dépendances système
+# Installer dépendances système nécessaires
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget curl gdebi-core libcurl4-openssl-dev libssl-dev libxml2-dev zlib1g-dev git pandoc fonts-dejavu \
+    wget \
+    curl \
+    gdebi-core \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    zlib1g-dev \
+    git \
+    pandoc \
+    fonts-dejavu \
     && rm -rf /var/lib/apt/lists/*
 
 # Installer Quarto CLI
@@ -14,16 +24,21 @@ RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO
 # Installer le package R tinytex
 RUN Rscript -e "install.packages('tinytex', repos = 'https://cloud.r-project.org')"
 
-# Installer TinyTeX dans /opt/TinyTeX (accessible à tous)
-RUN Rscript -e "tinytex::install_tinytex(root = '/opt/TinyTeX', force = TRUE)"
+# Installer TinyTeX via script shell officiel
+RUN curl -sL "https://yihui.org/tinytex/install-bin-unix.sh" | sh
 
-# Ajouter TinyTeX au PATH global
-ENV PATH="/opt/TinyTeX/bin/x86_64-linux:${PATH}"
+# Ajouter TinyTeX au PATH pour que pdflatex soit trouvé
+ENV PATH="/root/.TinyTeX/bin/x86_64-linux:${PATH}"
 
-# Installer packages R utiles
-RUN install2.r --error --skipinstalled tidyverse rmarkdown quarto
+# Installer quelques packages R utiles
+RUN install2.r --error --skipinstalled \
+    tidyverse \
+    rmarkdown \
+    quarto
 
 # Vérifications
-RUN quarto --version && Rscript -e "tinytex::is_tinytex()" && which pdflatex
+RUN quarto --version && \
+    Rscript -e "tinytex::is_tinytex()" && \
+    which pdflatex
 
 CMD ["R"]
