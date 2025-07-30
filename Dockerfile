@@ -21,9 +21,12 @@ RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO
     gdebi --non-interactive quarto-${QUARTO_VERSION}-linux-amd64.deb && \
     rm quarto-${QUARTO_VERSION}-linux-amd64.deb
 
-# Installer TinyTeX via R
+# Installer TinyTeX via R (forcé)
 RUN Rscript -e "install.packages('tinytex', repos = 'https://cloud.r-project.org')" && \
     Rscript -e "tinytex::install_tinytex(force = TRUE)"
+
+# Ajouter TinyTeX au PATH (pour pdflatex)
+ENV PATH="/root/.TinyTeX/bin/x86_64-linux:${PATH}"
 
 # Installer quelques packages R utiles
 RUN install2.r --error --skipinstalled \
@@ -33,6 +36,7 @@ RUN install2.r --error --skipinstalled \
 
 # Vérifications
 RUN quarto --version && \
-    Rscript -e "tinytex::is_tinytex()"
+    Rscript -e "tinytex::is_tinytex()" && \
+    which pdflatex
 
 CMD ["R"]
